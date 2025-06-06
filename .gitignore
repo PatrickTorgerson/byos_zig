@@ -1,0 +1,5 @@
+.zig-cache
+.vscode
+zig-out
+img
+res
