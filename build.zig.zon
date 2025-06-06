@@ -1,0 +1,29 @@
+.{
+    .name = .byos,
+    .version = "0.0.0",
+    .fingerprint = 0xc022e4a5b3494b04, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.14.0",
+    .dependencies = .{
+        .freetype = .{
+            .url = "https://github.com/freetype/freetype/archive/VER-2-13-3.tar.gz",
+            .hash = "N-V-__8AAKfbpwAXnUJ6TJEaqZGWgp6F_8OhiLErejRxQ7Y5",
+        },
+        .zlib = .{
+            .url = "https://github.com/allyourcodebase/zlib/archive/refs/tags/1.3.1.tar.gz",
+            .hash = "zlib-1.3.1-AAAAACEMAAA0qyoSrfgBb_p25ItL4yRf_TBRk-26TYMF",
+        },
+        .libpng = .{
+            .url = "https://github.com/pnggroup/libpng/archive/v1.6.48.tar.gz",
+            .hash = "N-V-__8AAEwZXwD52HvfoVcgwYc8GIjci5OwBIOxo9aYwtot",
+        },
+        // .datetime = .{
+        //     .url = "git+https://github.com/frmdstryr/zig-datetime?ref=master#feca3bca5c81409c049d8d2f4dc06012a374d085",
+        //     .hash = "datetime-0.8.0-cJNXzNLZAQADGScmVIKJTyogbfkbIFldrmSK8RweZ3Eg",
+        // },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
