@@ -45,23 +45,28 @@ pub fn randomQuote(in: CardInput) !void {
     const quote = quotes[rng.uintLessThan(usize, quotes.len)];
     var font = try Font.init(in.allocator, "res/lucida.ttf", 50);
     defer font.deinit(in.allocator);
-    const text = Text.init(&font, quote);
-    centeredText(in.surface, in.rect, text);
+    const text = Text.init(&font, quote, .{
+        .max_width = in.rect.w - 20,
+        .justify = .center,
+        .line_spacing = 10,
+    });
+    centeredText(in.surface, in.rect, text, 10);
 }
 
-pub fn centeredText(surface: *Surface, rect: Rect, text: Text) void {
+pub fn centeredText(surface: *Surface, rect: Rect, text: Text, padding: Num) void {
     const t = if (text.size[0] >= rect.w) blk: {
         log.warn("text too long; '{s}'", .{text.string});
-        break :blk Text.init(text.font, "err: text too long");
+        break :blk Text.init(text.font, "err: text too long", .{});
     } else text;
     surface.drawRect(rect, .white, .{
         .func = shader.roundedBlackOutline,
         .args = &.{ 15, 3 },
     });
-    const x = (rect.w / 2) - (t.size[0] / 2) + rect.x;
-    const y = (rect.h / 2) + (t.size[1] / 2) + rect.y;
+    // const x = (rect.w / 2) - (t.size[0] / 2) + rect.x;
+    //std.debug.assert(text.options.justify == .center);
+    const y = (rect.h / 2) - (t.size[1] / 2) + rect.y;
     log.info("attempting to draw text '{s}' with len {d}", .{ t.string, t.size[0] });
-    surface.drawText(t, .{ x, y });
+    surface.drawText(t, .{ rect.x + padding, y });
 }
 
 const quotes = [_][]const u8{

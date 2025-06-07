@@ -102,15 +102,22 @@ pub fn drawSurface(surface: *Surface, src: Surface, options: DrawOptions) void {
 }
 
 pub fn drawText(surface: *Surface, text: Text, pos: Vector) void {
-    var cur: Num = pos[0];
-    for (text.string) |char| {
-        const g = text.font.lookup(char);
-        surface.drawSurface(text.font.bitmap, .{
-            .pos = .{ cur + g.bearing[0], pos[1] - g.bearing[1] },
-            .src_rect = g.bounds,
-            .shader_opts = .{ .blend = .white_alpha },
-        });
-        cur += g.advance;
+    var ycur: Num = pos[1] + text.lines[0].height;
+    for (&text.lines) |l| {
+        if (l.isEmpty()) break;
+        var xcur: Num = pos[0];
+        for (l.slice) |char| {
+            const g = text.font.lookup(char);
+            surface.drawSurface(text.font.bitmap, .{
+                .pos = .{ l.offset + xcur + g.bearing[0], ycur - g.bearing[1] },
+                .src_rect = g.bounds,
+                .shader_opts = .{ .blend = .white_alpha },
+            });
+            xcur += g.advance;
+            // todo: append hyphen
+            // todo: space width
+        }
+        ycur += l.height + text.options.line_spacing;
     }
 }
 
