@@ -18,6 +18,7 @@ const height: Num = 480;
 const log = std.log.scoped(.image_gen);
 
 pub fn newImage(allocator: std.mem.Allocator, path: []const u8) !void {
+    log.info("generating image '{s}'", .{path});
     var surface = try Surface.init(allocator, width_usize, height_usize, .white);
     defer surface.deinit(allocator);
 

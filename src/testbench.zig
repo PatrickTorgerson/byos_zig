@@ -10,6 +10,8 @@ const Font = @import("Font.zig");
 const Text = @import("Text.zig");
 
 pub fn main() !void {
+    const n: u32 = 32;
+    std.debug.print("n = {0:0>4}\n", .{n});
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     try Font.initFreeType();

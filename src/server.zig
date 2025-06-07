@@ -31,6 +31,7 @@ pub fn main() !void {
 
 allocator: std.mem.Allocator,
 log_arena: std.heap.ArenaAllocator,
+imgpath_postfix: u32 = 0,
 
 pub fn init(allocator: std.mem.Allocator) Server {
     return .{
@@ -68,11 +69,12 @@ pub fn run(self: *Server) !void {
             try self.apiSetup(&request);
         } else if (std.mem.eql(u8, request.head.target, "/api/display")) {
             try self.apiDisplay(&request);
-        } else if (std.mem.eql(u8, request.head.target, "/img/new.bmp")) {
-            const bmp: []const u8 = try std.fs.cwd().readFile("img/new.bmp", &bmp_buffer);
-            try request.respond(bmp, .{ .keep_alive = false });
         } else if (std.mem.eql(u8, request.head.target, "/api/log")) {
             try self.apiLog(&request);
+        } else if (std.mem.startsWith(u8, request.head.target, "/img/")) {
+            const imgpath = request.head.target[1..];
+            const bmp: []const u8 = try std.fs.cwd().readFile(imgpath, &bmp_buffer);
+            try request.respond(bmp, .{ .keep_alive = false });
         } else try request.respond("", .{ .keep_alive = false, .status = .not_implemented });
     } else |err| return err;
 }
@@ -91,20 +93,26 @@ fn apiSetup(self: *Server, request: *std.http.Server.Request) !void {
 }
 
 fn apiDisplay(self: *Server, request: *std.http.Server.Request) !void {
-    try gen.newImage(self.allocator, "img/new.bmp");
-    try request.respond(
-        \\{
+    const response_fmt =
+        \\{{
+        \\  "image_url": "http://192.168.0.21:2300/img/new{0:0>4}.bmp",
+        \\  "filename": "new{0:0>4}.bmp",
         \\  "status": 0,
-        \\  "filename": "new.bmp",
         \\  "firmware_url": "nope",
-        \\  "image_url": "http://192.168.0.21:2300/img/new.bmp",
         \\  "image_url_timeout": 0,
         \\  "refresh_rate": 900,
         \\  "reset_firmware": false,
         \\  "special_function": "sleep",
         \\  "update_firmware": false
-        \\}
-    , .{ .keep_alive = false });
+        \\}}
+    ;
+    const offset = 43;
+    const width = 15;
+    var response_buffer: [1024]u8 = undefined;
+    const response = try std.fmt.bufPrint(&response_buffer, response_fmt, .{self.imgpath_postfix});
+    self.imgpath_postfix += 1;
+    try gen.newImage(self.allocator, response[offset..][0..width]);
+    try request.respond(response, .{ .keep_alive = false });
 }
 
 fn apiLog(self: *Server, request: *std.http.Server.Request) !void {
