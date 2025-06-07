@@ -25,8 +25,8 @@ pub const Options = struct {
     /// ignored if `max_width` is null
     line_spacing: Num = 0,
     /// ignored if `max_width` is null
-    /// todo: not implemented
     hypenate_on_wrap: bool = false,
+    // todo: equal line width
 };
 
 pub fn init(font: *Font, string: []const u8, options: Options) Text {
@@ -94,7 +94,7 @@ fn layout(text: *Text) void {
         state.low = @max(state.low, -g.bearing[1] + g.bounds.h);
         const c_width = if (state.i < text.string.len - 1) g.advance else g.bearing[0] + g.bounds.w;
         if (c == ' ') {
-            // todo: don't count consecutice spaces
+            // todo: don't count consecutive spaces
             state.space_count += 1;
             state.white_width += c_width;
         } else if (state.line_width + state.white_width + c_width < max_width) {
@@ -102,8 +102,9 @@ fn layout(text: *Text) void {
             state.white_width = 0;
             state.char_width_sum += c_width;
         } else {
-            // todo: backtrack
+            text.lines[state.l].append_hyphen = backtrack(text, &state, max_width);
             text.lines[state.l].makeLine(text, state, max_width);
+            while (state.i >= 0 and text.string[state.i] == ' ') state.i += 1;
             state.reset(state.i - 1, state.i);
         }
     }
@@ -113,11 +114,39 @@ fn layout(text: *Text) void {
 
 /// sets `state.i` to end of current line, updating `state.line_width` accordingly.
 /// returns is current like should end with a hyphen
-pub fn backtrack(text: *Text, state: LayoutState) bool {
-    // todo: implement
-    const hyphen_width = text.font.lookup('-').bearing[0] + text.font.lookup('-').bounds.w;
-    _ = hyphen_width;
-    _ = state;
+pub fn backtrack(text: *Text, state: *LayoutState, max_width: Num) bool {
+    state.i -= 1;
+    if (text.string[state.i] == ' ') {
+        state.space_count -= 1;
+        return false;
+    }
+    if (text.options.hypenate_on_wrap) {
+        const hyphen_width = text.font.lookup('-').bearing[0] + text.font.lookup('-').bounds.w;
+        while (state.line_width + hyphen_width >= max_width) {
+            const g = text.font.lookup(text.string[state.i]);
+            state.line_width -= g.advance;
+            if (text.string[state.i] != ' ') state.char_width_sum -= g.advance;
+            state.i -= 1;
+        }
+        state.i += 1;
+        if (text.string[state.i] != ' ') {
+            state.line_width += hyphen_width;
+            state.char_width_sum += hyphen_width;
+            return true;
+        }
+        state.space_count -= 1;
+        return false;
+    } else {
+        while (state.i >= 0 and text.string[state.i] != ' ') {
+            const g = text.font.lookup(text.string[state.i]);
+            state.line_width -= g.advance;
+            if (text.string[state.i] != ' ') state.char_width_sum -= g.advance;
+            state.i -= 1;
+        }
+        while (state.i > 0 and text.string[state.i - 1] == ' ') state.i -= 1;
+        state.space_count -= 1;
+        return false;
+    }
 }
 
 pub const Line = struct {
@@ -147,8 +176,13 @@ pub const Line = struct {
             .right => max_width - state.line_width,
             .center => (max_width / 2) - (state.line_width / 2),
             .flush => blk: {
-                // todo: edge case if `space_count == 0`
-                line.space_width = (max_width - state.char_width_sum) / state.space_count;
+                if (state.space_count > 0)
+                    line.space_width = (max_width - state.char_width_sum) / state.space_count;
+                std.debug.print("space_count = {d} | char_width_sum  = {d} | space_width = {d}\n", .{
+                    state.space_count,
+                    state.char_width_sum,
+                    line.space_width,
+                });
                 break :blk 0;
             },
         };

@@ -105,20 +105,28 @@ pub fn drawText(surface: *Surface, text: Text, pos: Vector) void {
     var ycur: Num = pos[1] + text.lines[0].height;
     for (&text.lines) |l| {
         if (l.isEmpty()) break;
-        var xcur: Num = pos[0];
+        var xcur: Num = pos[0] + l.offset;
         for (l.slice) |char| {
-            const g = text.font.lookup(char);
-            surface.drawSurface(text.font.bitmap, .{
-                .pos = .{ l.offset + xcur + g.bearing[0], ycur - g.bearing[1] },
-                .src_rect = g.bounds,
-                .shader_opts = .{ .blend = .white_alpha },
-            });
-            xcur += g.advance;
-            // todo: append hyphen
-            // todo: space width
+            if (l.space_width > 0 and char == ' ') {
+                xcur += l.space_width;
+            } else {
+                xcur += surface.drawChar(text.font, char, .{ xcur, ycur });
+            }
         }
+        if (l.append_hyphen)
+            _ = surface.drawChar(text.font, '-', .{ xcur, ycur });
         ycur += l.height + text.options.line_spacing;
     }
+}
+
+pub fn drawChar(surface: *Surface, font: *Font, char: u8, pos: Vector) Num {
+    const g = font.lookup(char);
+    surface.drawSurface(font.bitmap, .{
+        .pos = .{ pos[0] + g.bearing[0], pos[1] - g.bearing[1] },
+        .src_rect = g.bounds,
+        .shader_opts = .{ .blend = .white_alpha },
+    });
+    return g.advance;
 }
 
 pub fn size(surface: Surface) Vector {
