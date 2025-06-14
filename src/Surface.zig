@@ -103,7 +103,7 @@ pub fn drawSurface(surface: *Surface, src: Surface, options: DrawOptions) void {
 
 pub fn drawText(surface: *Surface, text: Text, pos: Vector) void {
     var ycur: Num = pos[1] + text.lines[0].height;
-    for (&text.lines) |l| {
+    for (text.lines) |l| {
         if (l.isEmpty()) break;
         var xcur: Num = pos[0] + l.offset;
         for (l.slice) |char| {

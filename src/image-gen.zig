@@ -46,18 +46,20 @@ pub fn randomQuote(in: CardInput) !void {
     const quote = quotes[rng.uintLessThan(usize, quotes.len)];
     var font = try Font.init(in.allocator, "res/lucida.ttf", 50);
     defer font.deinit(in.allocator);
-    const text = Text.init(&font, quote, .{
+    const text = try Text.init(in.allocator, &font, quote, .{
         .max_width = in.rect.w - 20,
         .justify = .center,
         .line_spacing = 10,
+        .flags = .init(.{ .equal_line_width = true }),
     });
+    defer text.deinit(in.allocator);
     centeredText(in.surface, in.rect, text, 10);
 }
 
 pub fn centeredText(surface: *Surface, rect: Rect, text: Text, padding: Num) void {
-    const t = if (text.size[0] >= rect.w) blk: {
+    const t = if (text.size[0] >= rect.w) {
         log.warn("text too long; '{s}'", .{text.string});
-        break :blk Text.init(text.font, "err: text too long", .{});
+        return;
     } else text;
     surface.drawRect(rect, .white, .{
         .func = shader.roundedBlackOutline,
